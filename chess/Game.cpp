@@ -1,6 +1,6 @@
 #include "Game.h"
 #include <iostream>
-Game::Game():board() {
+Game::Game():board(true) {
 	ingame = true;
 	window = new sf::RenderWindow(sf::VideoMode(size * 8 + offset * 2, size * 8 + offset * 2), "Chess", sf::Style::Titlebar | sf::Style::Close);
 	window->setFramerateLimit(30);
@@ -42,21 +42,21 @@ void Game::update() {
 		case sf::Event::MouseButtonPressed:
 			if (ev.mouseButton.button == sf::Mouse::Left && !first_cord && !second_cord) {
 				mouse_pos_1 = sf::Mouse::getPosition(*window);
-				x = (mouse_pos_1.x - offset) / size;
-				y = (mouse_pos_1.y - offset) / size;
-				if (x < 0 || x>7 || y < 0 || y>7)
+				current_x = (mouse_pos_1.x - offset) / size;
+				current_y = (mouse_pos_1.y - offset) / size;
+				if (current_x < 0 || current_x>7 || current_y < 0 || current_y>7)
 					continue;
 				first_cord = true;
-				square_selected.setPosition(x * size + offset, y * size + offset);
+				square_selected.setPosition(current_x * size + offset, current_y * size + offset);
 			}
 			else if (ev.mouseButton.button == sf::Mouse::Left && first_cord && !second_cord) {
 				mouse_pos_2 = sf::Mouse::getPosition(*window);
-				nx = (mouse_pos_2.x - offset) / size;
-				ny = (mouse_pos_2.y - offset) / size;
+				new_x = (mouse_pos_2.x - offset) / size;
+				new_y = (mouse_pos_2.y - offset) / size;
 				second_cord = true;
 			}
 			if (first_cord && second_cord) {
-				if (board.piece_move(x, y, nx, ny, turn))
+				if (board.piece_move(current_x, current_y, new_x, new_y, turn))
 					turn = !turn;
 				std::cout << "\nzly ruch"<<"\n";
 				first_cord = second_cord = false;

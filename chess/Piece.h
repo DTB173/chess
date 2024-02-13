@@ -2,6 +2,22 @@
 #include <string>
 #include <cmath>
 #include <SFML/Graphics.hpp>
+
+enum piece_types {
+	empty = 0,
+	pawn = 1,
+	rook = 2,
+	knight = 3,
+	bishop = 4,
+	queen = 5,
+	king = 6
+};
+enum team_color {
+	no_team = 0,
+	white = 1,
+	black = 2
+};
+
 class Piece
 {
 	int team;
@@ -10,7 +26,7 @@ class Piece
 	bool first_move = false;
 	int enpass = false;
 public:
-	Piece() : team(0), type(0), name("unknown"), first_move(false) {}
+	Piece() : team(empty), type(no_team), name("unknown"), first_move(false) {}
 	Piece(int team_v, int type_v);
 	Piece piece_copy(Piece piece_v);
 
@@ -25,5 +41,5 @@ public:
 	void moved();	
 	
 	bool is_first_move()const { return first_move; };
-	bool is_legal(int x, int y, int nx, int ny, int type_v) const;
+	bool is_legal(int current_x, int current_y, int new_x, int new_y, int type_v) const;
 };

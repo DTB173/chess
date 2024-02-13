@@ -5,29 +5,30 @@
 #include "King.h"
 #define size 96
 #define offset 50
+
 class Board
 {
 	Piece piece[8][8];
 	sf::Texture textures[2][6];
-	King whiteKing = King(4, 7, 1);
-	King blackKing = King(4, 0, 2);
+	King white_king;
+	King black_king;
 public:
-	Board();
+	Board(bool who_starts);
 	void init_array();
 	void init_textures();
 	void render(sf::RenderWindow* window);
 
-	bool piece_move(int x, int y, int nx, int ny, bool turn);
-	bool check_move(int x, int y, int nx, int ny,Piece (*arr)[8])const;
-	bool simulate_move(int x, int y, int nx, int ny, int team);
-	void castle(int kx, int ky, int rx, int ry);
+	bool piece_move(int current_x, int current_y, int new_x, int new_y, bool turn);
+	bool check_move(int current_x, int current_y, int new_x, int new_y,Piece (*arr)[8])const;
+	bool simulate_move(int current_x, int current_y, int new_x, int new_y, int team);
+	void castle(int king_x, int king_y, int rook_x, int rook_y);
 
-	bool pawn_attack(int x, int y, int nx, int ny)const;
-	bool rook_path(int x, int y, int nx, int ny, Piece(*arr)[8])const;
-	bool bishop_path(int x, int y, int nx, int ny, Piece(*arr)[8])const;
+	bool pawn_attack(int current_x, int current_y, int new_x, int new_y)const;
+	bool rook_path(int current_x, int current_y, int new_x, int new_y, Piece(*arr)[8])const;
+	bool bishop_path(int current_x, int current_y, int new_x, int new_y, Piece(*arr)[8])const;
 
-	bool is_checked(int x, int y, int team, Piece(*arr)[8])const;
-	bool is_castle(int kx, int ky, int rx, int ry);
+	bool is_checked(int current_x, int current_y, int team, Piece(*arr)[8])const;
+	bool is_castle(int king_x, int king_y, int rook_x, int rook_y);
 	void dec_enpass();
 	int game_status(const bool turn)const;
 

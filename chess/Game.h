@@ -16,7 +16,7 @@ class Game
 	sf::CircleShape possible_move;
 	bool first_cord = false;
 	bool second_cord = false;
-	int x, y, nx, ny;
+	int current_x, current_y, new_x, new_y;
 	sf::Font font;
 	sf::Text text;
 	sf::Text cords;
