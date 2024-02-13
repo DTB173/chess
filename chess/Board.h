@@ -21,6 +21,7 @@ public:
 	bool check_move(int x, int y, int nx, int ny,Piece (*arr)[8])const;
 	bool simulate_move(int x, int y, int nx, int ny, int team);
 	void castle(int kx, int ky, int rx, int ry);
+	void promote(int x, int y);
 
 	bool pawn_attack(int x, int y, int nx, int ny)const;
 	bool rook_path(int x, int y, int nx, int ny, Piece(*arr)[8])const;
