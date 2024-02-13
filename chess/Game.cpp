@@ -117,11 +117,5 @@ void Game::render() {
 }
 
 int Game::game_status()const {
-	if (!board.kingstatus(1)) {
-		return -1;
-	}if (!board.kingstatus(2)) {
-		return -2;
-	}else {
-		return 1;
-	}
+	return 1;
 }

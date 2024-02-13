@@ -21,12 +21,15 @@ class Game
 	sf::Text text;
 	sf::Text cords;
 public:
-	void update();
-	void render();
 	Game();
 	~Game();
+
+	void update();
+	void render();
+
 	int game_status()const;
-	bool is_ingame()const { return ingame; };
 	bool which_turn()const { return turn; };
+	bool is_ingame()const { return ingame; };
+
 };
 

@@ -1,17 +1,54 @@
 #include "Board.h"
+
 #include <iostream>
 Board::Board() {
 	init_array();
 	init_textures();
-	whiteKing.team = 1;
-	whiteKing.x = 4;
-	whiteKing.y = 7;
-	whiteKing.is_alive = true;
+}
 
-	blackKing.team = 2;
-	blackKing.x = 4;
-	blackKing.y = 0;
-	blackKing.is_alive = true;
+void Board::init_array() {
+	// Initialize the board with empty spaces
+	for (int row = 0; row < 8; ++row) {
+		for (int col = 0; col < 8; ++col) {
+			piece[row][col] = Piece();
+		}
+	}
+
+	// Set up the white pieces
+	piece[0][7] = Piece(1, 2); // rook
+	piece[1][7] = Piece(1, 3); // knight
+	piece[2][7] = Piece(1, 4); // bishop
+	piece[3][7] = Piece(1, 5); // queen
+	piece[4][7] = Piece(1, 6); // king
+	piece[5][7] = Piece(1, 4); // bishop
+	piece[6][7] = Piece(1, 3); // knight
+	piece[7][7] = Piece(1, 2); // rook
+
+	for (int i = 0; i < 8; ++i) {
+		piece[i][6] = Piece(1, 1);
+	}
+
+	// Set up the black pieces
+	piece[0][0] = Piece(2, 2);
+	piece[1][0] = Piece(2, 3);
+	piece[2][0] = Piece(2, 4);
+	piece[3][0] = Piece(2, 5);
+	piece[4][0] = Piece(2, 6);
+	piece[5][0] = Piece(2, 4);
+	piece[6][0] = Piece(2, 3);
+	piece[7][0] = Piece(2, 2);
+
+	for (int i = 0; i < 8; ++i) {
+		piece[i][1] = Piece(2, 1);
+	}
+}
+void Board::init_textures() {
+	std::string teams[2] = { "white","black" };
+	std::string types[6] = { "pawn","rook","knight","bishop","queen","king" };
+	for (int i = 0; i < 2; ++i)
+		for (int j = 0; j < 6; j++) {
+			textures[i][j].loadFromFile("pieces/" + types[j] + "_" + teams[i] + ".png");
+		}
 }
 
 void Board::render(sf::RenderWindow* window) {
@@ -41,24 +78,24 @@ bool Board::piece_move(int x, int y, int nx, int ny, bool turn) {
 			}
 			if (piece[x][y].get_type() == 6) {
 				if (piece[x][y].get_team() == 1) {
-					whiteKing.move_king(nx, ny);
+					whiteKing.set_position(nx, ny);
 				}
 				else {
-					blackKing.move_king(nx, ny);
+					blackKing.set_position(nx, ny);
 				}
 			}
 			if (piece[nx][ny].get_type() == 6) {
 				if (piece[nx][ny].get_team() == 1)
-					whiteKing.is_alive = false;
+					whiteKing.set_status(false);
 				else
-					blackKing.is_alive = false;
+					blackKing.set_status(false);
 			}
 			dec_enpass();
 			piece[nx][ny].piece_copy(piece[x][y]);
 			piece[x][y] = Piece();
 			if (piece[nx][y].get_enpass() > 0)
 				piece[nx][y] = Piece();
-			std::cout<<"\nwhite king: " << is_checked(whiteKing.x, whiteKing.y, 1,piece) << " black king: " << is_checked(blackKing.x, blackKing.y, 2,piece) << "\n"; ;
+			std::cout<<"\nwhite king: " << is_checked(whiteKing.get_x(),whiteKing.get_y(),whiteKing.get_team(), piece) << " black king: " << is_checked(blackKing.get_x(),blackKing.get_y(),blackKing.get_team(), piece) << "\n"; ;
 			tab_display(piece);
 			return true;
 		}else if ((piece[x][y].get_type() == 6 && piece[nx][ny].get_type() == 2) && piece[x][y].get_team() == piece[nx][ny].get_team()) {
@@ -119,34 +156,62 @@ bool Board::check_move(int x, int y, int nx, int ny,Piece (*piece)[8])const {
 	}
 	return false;
 }
-void Board::King::move_king(int nx, int ny) {
-	this->x = nx;
-	this->y = ny;
-}
-void Board::dec_enpass() {
+
+bool Board::simulate_move(int x, int y, int nx, int ny, int team) {
+	Piece simpiece[8][8];
+	King tempwhiteKing(whiteKing);
+	King tempblackKing(blackKing);
+
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
-			if (piece[i][j].get_type() == 1)
-				piece[i][j].set_enpass(piece[i][j].get_enpass() - 1);
+			simpiece[i][j].piece_copy(piece[i][j]);
 		}
 	}
-}
-void Board::tab_display(Piece (*array)[8])const {
-	std::cout << "\n";
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
-			if (!array[j][i].get_team())
-				std::cout << "0 ";
-			else
-				std::cout << array[j][i].get_type() << " ";
+	if (piece[x][y].get_type() == 6) {
+		if (piece[x][y].get_team() == 1) {
+			tempwhiteKing.set_position(nx, ny);
 		}
-		std::cout << "\n";
+		else {
+			tempblackKing.set_position(nx, ny);
+		}
 	}
+	simpiece[nx][ny].piece_copy(piece[x][y]);
+	simpiece[x][y] = Piece();
+	tab_display(simpiece);
+	if (team == 1) {
+		if (!is_checked(tempwhiteKing.get_x(),tempwhiteKing.get_y(),tempwhiteKing.get_team(), simpiece)) {
+			return true;
+		}
+	}
+	if (team == 2) {
+		if (!is_checked(tempblackKing.get_x(),tempblackKing.get_y(),tempblackKing.get_team(), simpiece)) {
+			return true;
+		}
+	}
+	return false;
 }
 
-int Board::game_status(const bool turn)const {
-	return 0;
+void Board::castle(int kx, int ky, int rx, int ry) {
+	Piece temp;
+	piece[kx][ky].moved();
+	piece[rx][ry].moved();
+	int dxk = kx > rx ? -2 : 2;
+	int dxr = kx > rx ? -1 : 1;
+	if (piece[kx][ky].get_team() == 1) {
+		whiteKing.set_position(kx + dxk, ky);
+	}
+	else {
+		blackKing.set_position(kx + dxk, ky);
+	}
+	temp.piece_copy(piece[kx][ky]);
+
+	piece[kx + dxr][ky].piece_copy(piece[rx][ry]);
+	piece[rx][ry] = Piece();
+	piece[kx][ky] = Piece();
+	piece[kx + dxk][ky].piece_copy(temp);
 }
+
+
 bool Board::pawn_attack(int x, int y, int nx, int ny)const {
 	if (abs(x - nx) == 1) { //check horizontal
 		int dy = (piece[x][y].get_team() == 1 ? y - ny : ny - y); //check vertical with respect to teams
@@ -245,118 +310,35 @@ bool Board::is_castle(int kx, int ky, int rx, int ry) {
 	}
 	return false;
 }
-void Board::castle(int kx, int ky, int rx, int ry) {
-	Piece temp;
-	piece[kx][ky].moved();
-	piece[rx][ry].moved();
-	int dxk = kx > rx ? -2 : 2;
-	int dxr = kx > rx ? -1 : 1;
-	if (piece[kx][ky].get_team() == 1) {
-		whiteKing.move_king(kx+dxk, ky);
-	}
-	else {
-		blackKing.move_king(kx+dxk, ky);
-	}
-	temp.piece_copy(piece[kx][ky]);
 
-	piece[kx+dxr][ky].piece_copy(piece[rx][ry]);
-	piece[rx][ry] = Piece();
-	piece[kx][ky] = Piece();
-	piece[kx + dxk][ky].piece_copy(temp);
-}
-bool Board::kingstatus(int team)const {
-	if (team == 1) {
-		return whiteKing.is_alive;
-	}
-	else {
-		return blackKing.is_alive;
-	}
-}
-
-Board::King Board::copyKing(King king) {
-	King kingcopy;
-	kingcopy.is_alive = king.is_alive;
-	kingcopy.team = king.team;
-	kingcopy.x = king.x;
-	kingcopy.y = king.y;
-	return kingcopy;
-}
-bool Board::simulate_move(int x, int y, int nx, int ny, int team) {
-	Piece simpiece[8][8];
-	King tempwhiteKing;
-	King tempblackKing;
-
-	tempwhiteKing = copyKing(whiteKing);
-	tempblackKing = copyKing(blackKing);
+void Board::dec_enpass() {
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
-			simpiece[i][j].piece_copy(piece[i][j]);
+			if (piece[i][j].get_type() == 1)
+				piece[i][j].set_enpass(piece[i][j].get_enpass() - 1);
 		}
-	}
-	if (piece[x][y].get_type() == 6) {
-		if (piece[x][y].get_team() == 1) {
-			tempwhiteKing.move_king(nx, ny);
-		}
-		else {
-			tempblackKing.move_king(nx, ny);
-		}
-	}
-	simpiece[nx][ny].piece_copy(piece[x][y]);
-	simpiece[x][y] = Piece();
-	tab_display(simpiece);
-	if (team == 1) {
-		if (!is_checked(tempwhiteKing.x, tempwhiteKing.y, 1,simpiece)) {
-			return true;
-		}
-	}
-	if (team == 2) {
-		if (!is_checked(tempblackKing.x, tempblackKing.y, 2,simpiece)) {
-			return true;
-		}
-	}
-	return false;
-}
-void Board::init_array() {
-	// Initialize the board with empty spaces
-	for (int row = 0; row < 8; ++row) {
-		for (int col = 0; col < 8; ++col) {
-			piece[row][col] = Piece();
-		}
-	}
-
-	// Set up the white pieces
-	piece[0][7] = Piece(1, 2); // rook
-	piece[1][7] = Piece(1, 3); // knight
-	piece[2][7] = Piece(1, 4); // bishop
-	piece[3][7] = Piece(1, 5); // queen
-	piece[4][7] = Piece(1, 6); // king
-	piece[5][7] = Piece(1, 4); // bishop
-	piece[6][7] = Piece(1, 3); // knight
-	piece[7][7] = Piece(1, 2); // rook
-
-	for (int i = 0; i < 8; ++i) {
-		piece[i][6] = Piece(1, 1);
-	}
-
-	// Set up the black pieces
-	piece[0][0] = Piece(2, 2);
-	piece[1][0] = Piece(2, 3);
-	piece[2][0] = Piece(2, 4);
-	piece[3][0] = Piece(2, 5);
-	piece[4][0] = Piece(2, 6);
-	piece[5][0] = Piece(2, 4);
-	piece[6][0] = Piece(2, 3);
-	piece[7][0] = Piece(2, 2);
-
-	for (int i = 0; i < 8; ++i) {
-		piece[i][1] = Piece(2, 1);
 	}
 }
-void Board::init_textures() {
-	std::string teams[2] = { "white","black" };
-	std::string types[6] = { "pawn","rook","knight","bishop","queen","king" };
-	for (int i = 0; i < 2; ++i)
-		for (int j = 0; j < 6; j++) {
-			textures[i][j].loadFromFile("pieces/" + types[j] + "_" + teams[i] + ".png");
-		}
+
+
+int Board::game_status(const bool turn)const {
+	return 0;
 }
+
+void Board::tab_display(Piece(*array)[8])const {
+	std::cout << "\n";
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < 8; j++) {
+			if (!array[j][i].get_team())
+				std::cout << "0 ";
+			else
+				std::cout << array[j][i].get_type() << " ";
+		}
+		std::cout << "\n";
+	}
+}
+
+
+
+
+
