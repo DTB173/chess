@@ -90,6 +90,9 @@ bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool 
 				else
 					black_king.set_status(false);
 			}
+			if (piece[x][y].get_type() == 1&&(ny==0||ny==7)) {
+				promote(x, y);
+			}
 			dec_enpass();
 			piece[new_x][new_y].piece_copy(piece[current_x][current_y]);
 			piece[current_x][current_y] = Piece();
@@ -211,7 +214,23 @@ void Board::castle(int king_x, int king_y, int rook_x, int rook_y) {
 	piece[king_x][king_y] = Piece();
 	piece[king_x + dxk][king_y].piece_copy(temp);
 }
-
+void Board::promote(int x, int y) {
+	int team = piece[x][y].get_team();
+	int choice;
+	bool success=false;
+	while (!success) {
+		std::cout << "\nwhat piece you want: rook - 1, knight - 2, bishop - 3, queen - 4?\n";
+		std::cin >> choice;
+		piece[x][y] = Piece();
+		switch (choice) {
+		case 1:piece[x][y] = Piece(team, 2); success = true; break;
+		case 2:piece[x][y] = Piece(team, 3); success = true; break;
+		case 3:piece[x][y] = Piece(team, 4); success = true; break;
+		case 4:piece[x][y] = Piece(team, 5); success = true; break;
+		default:std::cout << "\nwrong piece type selected!\n"; break;
+		}
+	}
+}
 
 bool Board::pawn_attack(int current_x, int current_y, int new_x, int new_y)const {
 	if (abs(current_x - new_x) == 1) { //check horizontal
@@ -321,7 +340,6 @@ void Board::dec_enpass() {
 		}
 	}
 }
-
 
 int Board::game_status(const bool turn)const {
 	return 0;
