@@ -11,7 +11,8 @@ Game::Game():board(true) {
 	square_white.setFillColor(sf::Color(238,238,210));
 	square_black.setFillColor(sf::Color(118,150,86));
 	square_selected.setFillColor(sf::Color(186,202,68));
-	possible_move.setFillColor(sf::Color(255,255,255,128));
+	possible_move.setFillColor(sf::Color(0,255,255,128));
+
 	if (!font.loadFromFile("Fonts/aerial.ttf"))
 		std::cout << "nie wczytano czcionki" << std::endl;
 	text.setFont(font);
@@ -71,14 +72,14 @@ void Game::update() {
 			text.setString("Black turn");
 	}
 	
-	if (board.game_status() != 0) {
+	if (board.game_status() != ongoing) {
 		if (board.game_status() == white) {
 			std::cout << "white won";
-		}else if(game_status() == black) {
+		}else if(board.game_status() == black) {
 			std::cout << "black won";
-		}else if (game_status() == stalemate)
+		}else if (board.game_status() == stalemate)
 			std::cout << "draw";
-		ingame = false;
+		//ingame = false;
 	}	 
 }
 void Game::render() {
@@ -119,10 +120,6 @@ void Game::render() {
 			window->draw(cords);
 	}
 	window->display();
-}
-
-int Game::game_status()const {
-	return 1;
 }
 
 void Game::display_highlighted(uint64_t possible_moves) {

@@ -71,6 +71,10 @@ bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool 
 	if ((turn && (piece[current_x][current_y].get_team() == white)) || (!turn && (piece[current_x][current_y].get_team() == black))) {
 		if (check_move(current_x, current_y, new_x, new_y, piece) && simulate_move(current_x, current_y, new_x, new_y, piece[current_x][current_y].get_team())) {
 			if (piece[current_x][current_y].is_first_move()) {
+				if (is_castle(current_x, current_y, new_x, new_y, piece)) {
+					castle(current_x, current_y, new_x, new_y);
+					return true;
+				}
 				piece[current_x][current_y].moved();
 				if (piece[current_x][current_y].get_type() == pawn && abs(current_y - new_y) == 2) {
 					piece[current_x][current_y].set_enpass(3);
@@ -84,13 +88,7 @@ bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool 
 					black_king.set_position(new_x, new_y);
 				}
 			}
-			if (piece[new_x][new_y].get_type() == king) {
-				if (piece[new_x][new_y].get_team() == white)
-					white_king.set_status(false);
-				else
-					black_king.set_status(false);
-			}
-			if (piece[current_x][current_y].get_type() == 1&&(new_y==0||new_y==7)) {
+			if (piece[current_x][current_y].get_type() == 1 && (new_y == 0 || new_y == 7)) {
 				promote(current_x, current_y);
 			}
 			dec_enpass();
@@ -102,14 +100,7 @@ bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool 
 			//tab_display(piece);
 			return true;
 		}
-		else if ((piece[current_x][current_y].get_type() == king && piece[new_x][new_y].get_type() == rook) && piece[current_x][current_y].get_team() == piece[new_x][new_y].get_team()) {
-			if (piece[current_x][current_y].is_first_move() && piece[new_x][new_y].is_first_move()) {
-				if (is_castle(current_x, current_y, new_x, new_y)) {
-					castle(current_x, current_y, new_x, new_y);
-					return true;
-				}
-			}
-		}
+
 	}
 	return false;
 }
@@ -126,11 +117,17 @@ bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece
 					return true;
 				}
 			}
-			else if (piece[new_x][current_y].get_enpass() > 0 && piece[new_x][current_y].get_team() != piece[current_x][current_y].get_team()) {//checking for enpassant
-				return true;
+			else if (piece[new_x][current_y].get_team() !=piece[current_x][current_y].get_team()) {//checking for enpassant
+				if (piece[new_x][current_y].get_enpass() > 0) {
+					if (piece_checked.get_team() == white && current_y == new_y+1)
+						return true;
+					if (piece_checked.get_team() == black && current_y == new_y-1)
+						return true;
+				}
+				return false;
 			}
 		}
-		else if (pawn_attack(current_x, current_y, new_x, new_y)) {//checking if capture can be performed
+		else if (pawn_attack(current_x, current_y, new_x, new_y,piece)) {//checking if capture can be performed
 			return true;
 		}
 		return false;
@@ -150,6 +147,8 @@ bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece
 		return (rook_path(current_x, current_y, new_x, new_y, piece) || bishop_path(current_x, current_y, new_x, new_y, piece));
 		break;
 	case king:
+		if (is_castle(current_x, current_y, new_x, new_y, piece))
+			return true;
 		if (piece_checked.is_legal(current_x, current_y, new_x, new_y, king)) {
 			if (piece[new_x][new_y].get_team() == piece_checked.get_team())
 				return false;
@@ -232,11 +231,17 @@ void Board::promote(int x, int y) {
 	}
 }
 
-bool Board::pawn_attack(int current_x, int current_y, int new_x, int new_y)const {
-	if (abs(current_x - new_x) == 1) { //check horizontal
-		int dy = (piece[current_x][current_y].get_team() == white ? current_y - new_y : new_y - current_y); //check vertical with respect to teams
-		if (dy == 1 && (piece[current_x][current_y].get_team() != piece[new_x][new_y].get_team()) && piece[new_x][new_y].get_team() != no_team) { //check if vertical =1 and if new_x new_y contains enemy piece
-			return true;
+bool Board::pawn_attack(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
+	if (abs(current_x - new_x) == 1) {
+		if (piece[current_x][current_y].get_team() == white && current_y - new_y == 1) {
+			if (piece[new_x][new_y].get_team() == black) {
+				return true;
+			}
+		}
+		if (piece[current_x][current_y].get_team() == black && new_y - current_y == 1) {
+			if (piece[new_x][new_y].get_team() == white) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -297,7 +302,7 @@ bool Board::bishop_path(int current_x, int current_y, int new_x, int new_y, Piec
 bool Board::is_checked(int current_x, int current_y, int team_v, Piece(*piece)[8])const {
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
-			if (!piece[i][j].get_team())
+			if (piece[i][j].get_team()==no_team)
 				continue;
 			else if (piece[i][j].get_team() != team_v && check_move(i, j, current_x, current_y, piece)) {
 				return true; // King is in check
@@ -306,28 +311,32 @@ bool Board::is_checked(int current_x, int current_y, int team_v, Piece(*piece)[8
 	}
 	return false; // King is not in check
 }
-bool Board::is_castle(int king_x, int king_y, int rook_x, int rook_y) {
-	if (king_x < rook_x) {
-		for (int current_x = king_x + 1; current_x < rook_x; current_x++) {
-			if (piece[current_x][king_y].get_type() != empty) {
-				return false;
+bool Board::is_castle(int king_x, int king_y, int rook_x, int rook_y,Piece(*piece)[8])const {
+	if ((piece[king_x][king_y].get_type() == king && piece[rook_x][rook_y].get_type() == rook) && (piece[king_x][king_y].get_team() == piece[rook_x][rook_y].get_team())) {
+		if (piece[king_x][king_y].is_first_move() && piece[rook_x][rook_y].is_first_move()) {
+			if (king_x < rook_x) {
+				for (int current_x = king_x + 1; current_x < rook_x; current_x++) {
+					if (piece[current_x][king_y].get_type() != empty) {
+						return false;
+					}
+					if (is_checked(king_x + 1, king_y, piece[king_x][rook_y].get_team(), piece) || is_checked(king_x + 2, king_y, piece[king_x][rook_y].get_team(), piece)) {
+						return false;
+					}
+				}
 			}
-			if (is_checked(king_x + 1, king_y, piece[king_x][rook_y].get_team(), piece) || is_checked(king_x + 2, king_y, piece[king_x][rook_y].get_team(), piece)) {
-				return false;
+			else if (king_x > rook_x) {
+				for (int current_x = rook_x + 1; current_x < king_x; current_x++) {
+					if (piece[current_x][rook_y].get_type() != empty) {
+						return false;
+					}
+				}
+				if (is_checked(king_x - 1, king_y, piece[king_x][rook_y].get_team(), piece) || is_checked(king_x - 2, king_y, piece[king_x][rook_y].get_team(), piece)) {
+					return false;
+				}
+			}if (!is_checked(king_x, king_y, piece[king_x][king_y].get_team(), piece)) {
+				return true;
 			}
 		}
-	}
-	else if (king_x > rook_x) {
-		for (int current_x = rook_x + 1; current_x < king_x; current_x++) {
-			if (piece[current_x][rook_y].get_type() != empty) {
-				return false;
-			}
-		}
-		if (is_checked(king_x - 1, king_y, piece[king_x][rook_y].get_team(), piece) || is_checked(king_x - 2, king_y, piece[king_x][rook_y].get_team(), piece)) {
-			return false;
-		}
-	}if (!is_checked(king_x, king_y, piece[king_x][king_y].get_team(), piece)) {
-		return true;
 	}
 	return false;
 }
@@ -369,7 +378,7 @@ int Board::game_status() {
 	}else if(!black_can_move&&black_checked) {
 		return white;
 	}
-	else {
+	else if(!white_can_move && !white_checked || !black_can_move && !black_checked) {
 		return stalemate;
 	}
 }
