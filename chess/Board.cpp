@@ -90,8 +90,8 @@ bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool 
 				else
 					black_king.set_status(false);
 			}
-			if (piece[x][y].get_type() == 1&&(ny==0||ny==7)) {
-				promote(x, y);
+			if (piece[current_x][current_y].get_type() == 1&&(new_y==0||new_y==7)) {
+				promote(current_x, current_y);
 			}
 			dec_enpass();
 			piece[new_x][new_y].piece_copy(piece[current_x][current_y]);
