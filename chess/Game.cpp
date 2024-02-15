@@ -7,9 +7,11 @@ Game::Game():board(true) {
 	square_white = sf::RectangleShape(sf::Vector2f(size, size));
 	square_black = sf::RectangleShape(sf::Vector2f(size, size));
 	square_selected = sf::RectangleShape(sf::Vector2f(size, size));
-	square_white.setFillColor(sf::Color::White);
-	square_black.setFillColor(sf::Color::Cyan);
-	square_selected.setFillColor(sf::Color::Magenta);
+	possible_move = sf::RectangleShape(sf::Vector2f(size,size));
+	square_white.setFillColor(sf::Color(238,238,210));
+	square_black.setFillColor(sf::Color(118,150,86));
+	square_selected.setFillColor(sf::Color(186,202,68));
+	possible_move.setFillColor(sf::Color(255,255,255,128));
 	if (!font.loadFromFile("Fonts/aerial.ttf"))
 		std::cout << "nie wczytano czcionki" << std::endl;
 	text.setFont(font);
@@ -41,6 +43,7 @@ void Game::update() {
 			break;
 		case sf::Event::MouseButtonPressed:
 			if (ev.mouseButton.button == sf::Mouse::Left && !first_cord && !second_cord) {
+				possible_moves = 0;
 				mouse_pos_1 = sf::Mouse::getPosition(*window);
 				current_x = (mouse_pos_1.x - offset) / size;
 				current_y = (mouse_pos_1.y - offset) / size;
@@ -48,6 +51,7 @@ void Game::update() {
 					continue;
 				first_cord = true;
 				square_selected.setPosition(current_x * size + offset, current_y * size + offset);
+				board.highlight_moves(current_x, current_y, possible_moves);
 			}
 			else if (ev.mouseButton.button == sf::Mouse::Left && first_cord && !second_cord) {
 				mouse_pos_2 = sf::Mouse::getPosition(*window);
@@ -58,7 +62,6 @@ void Game::update() {
 			if (first_cord && second_cord) {
 				if (board.piece_move(current_x, current_y, new_x, new_y, turn))
 					turn = !turn;
-				std::cout << "\nzly ruch"<<"\n";
 				first_cord = second_cord = false;
 			}
 		}	
@@ -68,17 +71,18 @@ void Game::update() {
 			text.setString("Black turn");
 	}
 	
-	if (game_status() != 1) {
-		if (game_status() == -2) {
+	if (board.game_status() != 0) {
+		if (board.game_status() == white) {
 			std::cout << "white won";
-		}else if(game_status() == -1) {
+		}else if(game_status() == black) {
 			std::cout << "black won";
-		}
+		}else if (game_status() == stalemate)
+			std::cout << "draw";
 		ingame = false;
 	}	 
 }
 void Game::render() {
-	window->clear(sf::Color(105, 69, 26));
+	window->clear(sf::Color(128, 128, 128));
 	const char* ycords[8] = { "8", "7", "6", "5", "4", "3", "2", "1" };
 	const char* xcords[8] = { "A", "B", "C", "D", "E", "F", "G", "H" };
 	
@@ -105,6 +109,7 @@ void Game::render() {
 	}
 	if (first_cord) {
 		window->draw(square_selected);
+		display_highlighted(possible_moves);
 	}
 	board.render(window);
 
@@ -118,4 +123,17 @@ void Game::render() {
 
 int Game::game_status()const {
 	return 1;
+}
+
+void Game::display_highlighted(uint64_t possible_moves) {
+	for (int y = 0; y < 8; ++y) {
+		for (int x = 0; x < 8; ++x) {
+			int bit_index = y * 8 + x;
+			uint64_t mask = (uint64_t)1 << bit_index;
+			if (possible_moves & mask) {
+				possible_move.setPosition(x * size + offset, y * size + offset);
+				window->draw(possible_move);
+			}
+		}
+	}
 }

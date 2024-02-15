@@ -99,7 +99,7 @@ bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool 
 			if (piece[new_x][current_y].get_enpass() > 0)
 				piece[new_x][current_y] = Piece();
 			std::cout << "\nwhite king: " << is_checked(white_king.get_x(), white_king.get_y(), white_king.get_team(), piece) << " black king: " << is_checked(black_king.get_x(), black_king.get_y(), black_king.get_team(), piece) << "\n"; ;
-			tab_display(piece);
+			//tab_display(piece);
 			return true;
 		}
 		else if ((piece[current_x][current_y].get_type() == king && piece[new_x][new_y].get_type() == rook) && piece[current_x][current_y].get_team() == piece[new_x][new_y].get_team()) {
@@ -139,7 +139,7 @@ bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece
 		return rook_path(current_x, current_y, new_x, new_y, piece);
 		break;
 	case knight:
-		if (piece_checked.is_legal(current_x, current_y, new_x, new_y, knight))
+		if (piece_checked.is_legal(current_x, current_y, new_x, new_y, knight)&&piece_checked.get_team()!=piece[new_x][new_y].get_team())
 			return true;
 		return false;
 		break;
@@ -181,7 +181,7 @@ bool Board::simulate_move(int current_x, int current_y, int new_x, int new_y, in
 	}
 	simpiece[new_x][new_y].piece_copy(piece[current_x][current_y]);
 	simpiece[current_x][current_y] = Piece();
-	tab_display(simpiece);
+	//tab_display(simpiece);
 	if (team == white) {
 		if (!is_checked(tempwhiteKing.get_x(), tempwhiteKing.get_y(), tempwhiteKing.get_team(), simpiece)) {
 			return true;
@@ -331,7 +331,22 @@ bool Board::is_castle(int king_x, int king_y, int rook_x, int rook_y) {
 	}
 	return false;
 }
-
+bool Board::have_possible_moves(int team) {
+	for (int current_x = 0; current_x < 8; current_x++) {
+		for (int current_y = 0; current_y < 8; current_y++) {
+			if (piece[current_x][current_y].get_team() != team)
+				continue;
+			for (int new_x = 0; new_x < 8; new_x++) {
+				for (int new_y = 0; new_y < 8; new_y++) {
+					if (check_move(current_x, current_y, new_x, new_y, piece) && simulate_move(current_x, current_y, new_x, new_y, team)) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
 void Board::dec_enpass() {
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
@@ -341,8 +356,34 @@ void Board::dec_enpass() {
 	}
 }
 
-int Board::game_status(const bool turn)const {
-	return 0;
+int Board::game_status() {
+	bool white_can_move = have_possible_moves(white);
+	bool white_checked = is_checked(white_king.get_x(), white_king.get_y(), white, piece);
+	bool black_can_move = have_possible_moves(black);
+	bool black_checked = is_checked(black_king.get_x(), black_king.get_y(), black, piece);
+	if (white_can_move&&black_can_move) {
+		return ongoing;
+	}
+	else if (!white_can_move&&white_checked) {
+		return black;
+	}else if(!black_can_move&&black_checked) {
+		return white;
+	}
+	else {
+		return stalemate;
+	}
+}
+
+void Board::highlight_moves(int current_x, int current_y, uint64_t& possible_moves) {
+	for (int new_x = 0; new_x < 8; new_x++) {
+		for (int new_y = 0; new_y < 8; new_y++) {
+			if (check_move(current_x, current_y, new_x, new_y, piece) && simulate_move(current_x, current_y, new_x, new_y, piece[current_x][current_y].get_team())) {
+				int index = convert_to_index(new_x, new_y);
+				uint64_t mask = (uint64_t)1 << index;
+				possible_moves |= mask;
+			}
+		}
+	}
 }
 
 void Board::tab_display(Piece(*array)[8])const {

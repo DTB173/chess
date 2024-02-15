@@ -13,10 +13,11 @@ class Game
 	sf::RectangleShape square_white;
 	sf::RectangleShape square_black;
 	sf::RectangleShape square_selected;
-	sf::CircleShape possible_move;
+	sf::RectangleShape possible_move;
 	bool first_cord = false;
 	bool second_cord = false;
 	int current_x, current_y, new_x, new_y;
+	uint64_t possible_moves;
 	sf::Font font;
 	sf::Text text;
 	sf::Text cords;
@@ -30,6 +31,6 @@ public:
 	int game_status()const;
 	bool which_turn()const { return turn; };
 	bool is_ingame()const { return ingame; };
-
+	void display_highlighted(uint64_t possible_moves);
 };
 
