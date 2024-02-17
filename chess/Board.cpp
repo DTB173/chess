@@ -88,8 +88,10 @@ bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool 
 					black_king.set_position(new_x, new_y);
 				}
 			}
-			if (piece[current_x][current_y].get_type() == 1 && (new_y == 0 || new_y == 7)) {
+			if (piece[current_x][current_y].get_type() == pawn && (new_y == 0 || new_y == 7)) {
+				//int type = display_choice();
 				promote(current_x, current_y);
+
 			}
 			dec_enpass();
 			piece[new_x][new_y].piece_copy(piece[current_x][current_y]);
@@ -100,7 +102,6 @@ bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool 
 			//tab_display(piece);
 			return true;
 		}
-
 	}
 	return false;
 }
@@ -127,13 +128,13 @@ bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece
 				return false;
 			}
 		}
-		else if (pawn_attack(current_x, current_y, new_x, new_y,piece)) {//checking if capture can be performed
+		else if (is_pawn_capture(current_x, current_y, new_x, new_y,piece)) {//checking if capture can be performed
 			return true;
 		}
 		return false;
 		break;
 	case rook:
-		return rook_path(current_x, current_y, new_x, new_y, piece);
+		return is_rook_move_valid(current_x, current_y, new_x, new_y, piece);
 		break;
 	case knight:
 		if (piece_checked.is_legal(current_x, current_y, new_x, new_y, knight)&&piece_checked.get_team()!=piece[new_x][new_y].get_team())
@@ -141,10 +142,10 @@ bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece
 		return false;
 		break;
 	case bishop:
-		return bishop_path(current_x, current_y, new_x, new_y, piece);
+		return is_bishop_move_valid(current_x, current_y, new_x, new_y, piece);
 		break;
 	case queen:
-		return (rook_path(current_x, current_y, new_x, new_y, piece) || bishop_path(current_x, current_y, new_x, new_y, piece));
+		return (is_rook_move_valid(current_x, current_y, new_x, new_y, piece) || is_bishop_move_valid(current_x, current_y, new_x, new_y, piece));
 		break;
 	case king:
 		if (is_castle(current_x, current_y, new_x, new_y, piece))
@@ -194,7 +195,16 @@ bool Board::simulate_move(int current_x, int current_y, int new_x, int new_y, in
 	return false;
 }
 
-void Board::castle(int king_x, int king_y, int rook_x, int rook_y) {
+void Board::castle(int king_x, int king_y, int new_x, int new_y) {
+	int rook_x, rook_y;
+	if (king_x > new_x) {
+		rook_x = 0;
+	}
+	else {
+		rook_x = 7;
+	}
+	rook_y = king_y;	
+
 	Piece temp;
 	piece[king_x][king_y].moved();
 	piece[rook_x][rook_y].moved();
@@ -231,7 +241,7 @@ void Board::promote(int x, int y) {
 	}
 }
 
-bool Board::pawn_attack(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
+bool Board::is_pawn_capture(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
 	if (abs(current_x - new_x) == 1) {
 		if (piece[current_x][current_y].get_team() == white && current_y - new_y == 1) {
 			if (piece[new_x][new_y].get_team() == black) {
@@ -246,7 +256,7 @@ bool Board::pawn_attack(int current_x, int current_y, int new_x, int new_y, Piec
 	}
 	return false;
 }
-bool Board::rook_path(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8]) const {
+bool Board::is_rook_move_valid(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8]) const {
 	if (!piece[current_x][current_y].is_legal(current_x, current_y, new_x, new_y, rook)) {
 		return false;
 	}
@@ -276,7 +286,7 @@ bool Board::rook_path(int current_x, int current_y, int new_x, int new_y, Piece(
 	}
 	return true; // Movement is valid
 }
-bool Board::bishop_path(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
+bool Board::is_bishop_move_valid(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
 	if (piece[current_x][current_y].is_legal(current_x, current_y, new_x, new_y, bishop)) {
 		int dx = new_x > current_x ? 1 : -1;
 		int dy = new_y > current_y ? 1 : -1;
@@ -311,7 +321,32 @@ bool Board::is_checked(int current_x, int current_y, int team_v, Piece(*piece)[8
 	}
 	return false; // King is not in check
 }
-bool Board::is_castle(int king_x, int king_y, int rook_x, int rook_y,Piece(*piece)[8])const {
+bool Board::is_castle(int king_x, int king_y, int new_x, int new_y,Piece(*piece)[8])const {
+	if (new_x != 2 && new_x != 6) {
+		return false; // Incorrect target column for castling
+	}
+
+	int rook_x, rook_y;
+
+	// Check if the king is moving horizontally during castling
+	if (king_y == new_y) {
+		// Determine the position of the rook based on the king's movement direction
+		if (king_x > new_x) {
+			rook_x = 0;
+			rook_y = king_y;
+		}
+		else if (king_x < new_x) {
+			rook_x = 7;
+			rook_y = king_y;
+		}
+		else {
+			return false; // King and rook are not in the same row
+		}
+	}
+	else {
+		return false; // King is not moving horizontally during castling
+	}
+
 	if ((piece[king_x][king_y].get_type() == king && piece[rook_x][rook_y].get_type() == rook) && (piece[king_x][king_y].get_team() == piece[rook_x][rook_y].get_team())) {
 		if (piece[king_x][king_y].is_first_move() && piece[rook_x][rook_y].is_first_move()) {
 			if (king_x < rook_x) {
