@@ -1,13 +1,17 @@
 #pragma once
 #include "Board.h"
+#include "Button.h"
 #include <SFML/Graphics.hpp>
 class Game
 {
 	Board board;
+	Button button;
 	sf::RenderWindow* window;
 	sf::Event ev;
 	bool ingame;
+	bool ending;
 	bool turn=true;
+	bool selecting = true;
 	sf::Vector2i mouse_pos_1;
 	sf::Vector2i mouse_pos_2;
 	sf::RectangleShape square_white;
@@ -32,5 +36,6 @@ public:
 	bool which_turn()const { return turn; };
 	bool is_ingame()const { return ingame; };
 	void display_highlighted(uint64_t possible_moves);
+	int display_promotion(int new_y);
 };
 

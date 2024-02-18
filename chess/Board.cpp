@@ -66,44 +66,43 @@ void Board::render(sf::RenderWindow* window) {
 		}
 	}
 }
-
-bool Board::piece_move(int current_x, int current_y, int new_x, int new_y, bool turn) {
-	if ((turn && (piece[current_x][current_y].get_team() == white)) || (!turn && (piece[current_x][current_y].get_team() == black))) {
+int Board::validate_move(int current_x, int current_y, int new_x, int new_y, bool turn) {
+	if ((turn && (piece[current_x][current_y].get_team() == white)) || (!turn && (piece[current_x][current_y].get_team() == black)))
 		if (check_move(current_x, current_y, new_x, new_y, piece) && simulate_move(current_x, current_y, new_x, new_y, piece[current_x][current_y].get_team())) {
-			if (piece[current_x][current_y].is_first_move()) {
-				if (is_castle(current_x, current_y, new_x, new_y, piece)) {
-					castle(current_x, current_y, new_x, new_y);
-					return true;
-				}
-				piece[current_x][current_y].moved();
-				if (piece[current_x][current_y].get_type() == pawn && abs(current_y - new_y) == 2) {
-					piece[current_x][current_y].set_enpass(3);
-				}
-			}
-			if (piece[current_x][current_y].get_type() == king) {
-				if (piece[current_x][current_y].get_team() == white) {
-					white_king.set_position(new_x, new_y);
-				}
-				else {
-					black_king.set_position(new_x, new_y);
-				}
-			}
 			if (piece[current_x][current_y].get_type() == pawn && (new_y == 0 || new_y == 7)) {
-				//int type = display_choice();
-				promote(current_x, current_y);
-
+				return 2;
 			}
-			dec_enpass();
-			piece[new_x][new_y].piece_copy(piece[current_x][current_y]);
-			piece[current_x][current_y] = Piece();
-			if (piece[new_x][current_y].get_enpass() > 0)
-				piece[new_x][current_y] = Piece();
-			std::cout << "\nwhite king: " << is_checked(white_king.get_x(), white_king.get_y(), white_king.get_team(), piece) << " black king: " << is_checked(black_king.get_x(), black_king.get_y(), black_king.get_team(), piece) << "\n"; ;
-			//tab_display(piece);
-			return true;
+			return 1;
+		}
+	return 0;
+}
+
+void Board::piece_move(int current_x, int current_y, int new_x, int new_y) {
+	if (piece[current_x][current_y].is_first_move()) {
+		if (is_castle(current_x, current_y, new_x, new_y, piece)) {
+			castle(current_x, current_y, new_x, new_y);
+			return ;
+		}
+		piece[current_x][current_y].moved();
+		if (piece[current_x][current_y].get_type() == pawn && abs(current_y - new_y) == 2) {
+			piece[current_x][current_y].set_enpass(3);
 		}
 	}
-	return false;
+	if (piece[current_x][current_y].get_type() == king) {
+		if (piece[current_x][current_y].get_team() == white) {
+			white_king.set_position(new_x, new_y);
+		}
+		else {
+			black_king.set_position(new_x, new_y);
+		}
+	}
+	dec_enpass();
+	piece[new_x][new_y].piece_copy(piece[current_x][current_y]);
+	piece[current_x][current_y] = Piece();
+	if (piece[new_x][current_y].get_enpass() > 0)
+		piece[new_x][current_y] = Piece();
+	std::cout << "\nwhite king: " << is_checked(white_king.get_x(), white_king.get_y(), white_king.get_team(), piece) << " black king: " << is_checked(black_king.get_x(), black_king.get_y(), black_king.get_team(), piece) << "\n"; ;
+	//tab_display(piece);
 }
 bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
 	Piece piece_checked = piece[current_x][current_y];
@@ -223,21 +222,14 @@ void Board::castle(int king_x, int king_y, int new_x, int new_y) {
 	piece[king_x][king_y] = Piece();
 	piece[king_x + dxk][king_y].piece_copy(temp);
 }
-void Board::promote(int x, int y) {
+void Board::promote(int x, int y,int type) {
 	int team = piece[x][y].get_team();
-	int choice;
-	bool success=false;
-	while (!success) {
-		std::cout << "\nwhat piece you want: rook - 1, knight - 2, bishop - 3, queen - 4?\n";
-		std::cin >> choice;
-		piece[x][y] = Piece();
-		switch (choice) {
-		case 1:piece[x][y] = Piece(team, 2); success = true; break;
-		case 2:piece[x][y] = Piece(team, 3); success = true; break;
-		case 3:piece[x][y] = Piece(team, 4); success = true; break;
-		case 4:piece[x][y] = Piece(team, 5); success = true; break;
-		default:std::cout << "\nwrong piece type selected!\n"; break;
-		}
+	piece[x][y] = Piece();
+	switch (type) {
+		case rook:piece[x][y] = Piece(team, rook); break;
+		case knight:piece[x][y] = Piece(team, knight); break;
+		case bishop:piece[x][y] = Piece(team, bishop); break;
+		case queen:piece[x][y] = Piece(team, queen); break;
 	}
 }
 
@@ -429,7 +421,11 @@ void Board::highlight_moves(int current_x, int current_y, uint64_t& possible_mov
 		}
 	}
 }
-
+void Board::reset() {
+	init_array();
+	white_king.set_position(4, 7);
+	black_king.set_position(4, 0);
+}
 void Board::tab_display(Piece(*array)[8])const {
 	std::cout << "\n";
 	for (int i = 0; i < 8; i++) {
