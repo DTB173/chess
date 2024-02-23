@@ -3,6 +3,12 @@
 Game::Game():board(true) {
 	ingame = true;
 	ending = false;
+	current_x = -1;
+	current_y = -1;
+	new_x = -1;
+	new_y = -1;
+	picked_move = {0,0,0,0};
+	possible_moves = 0;
 	window = new sf::RenderWindow(sf::VideoMode(size * 8 + offset * 2, size * 8 + offset * 2), "Chess", sf::Style::Titlebar | sf::Style::Close);
 	window->setFramerateLimit(30);
 	square_white = sf::RectangleShape(sf::Vector2f(size, size));
@@ -32,12 +38,21 @@ Game::~Game() {
 }
 void Game::update() {
 	while (window->pollEvent(ev)) {
+		if (!turn) {
+			picked_move = player.pick_move(board, turn,game_status);
+			if (game_status == 0) {
+				board.piece_move(picked_move[0], picked_move[1], picked_move[2], picked_move[3]);
+				game_status = board.game_status();
+				turn = !turn;
+			}
+		}
 		if (ending) {
 			if (ev.type == sf::Event::KeyPressed || sf::Event::Closed)
 				ingame = false;
 			if (ev.type == sf::Event::MouseButtonPressed && ev.mouseButton.button == sf::Mouse::Left) {
 				mouse_pos_1 = sf::Mouse::getPosition(*window);
 				if (mouse_pos_1.x > 230 && mouse_pos_1.x < 640 && mouse_pos_1.y>400 && mouse_pos_1.y < 464) {
+					game_status = ongoing;
 					ending = false;
 					turn = white;
 					board.reset();
@@ -67,8 +82,8 @@ void Game::update() {
 			if (ev.mouseButton.button == sf::Mouse::Left && !first_cord && !second_cord) {
 				possible_moves = 0;
 				mouse_pos_1 = sf::Mouse::getPosition(*window);
-				current_x = (mouse_pos_1.x - offset) / size;
-				current_y = (mouse_pos_1.y - offset) / size;
+				current_x = static_cast<int>(mouse_pos_1.x - offset) / size;
+				current_y = static_cast<int>(mouse_pos_1.y - offset) / size;
 				if (current_x < 0 || current_x>7 || current_y < 0 || current_y>7)
 					continue;
 				first_cord = true;
@@ -77,8 +92,8 @@ void Game::update() {
 			}
 			else if (ev.mouseButton.button == sf::Mouse::Left && first_cord && !second_cord) {
 				mouse_pos_2 = sf::Mouse::getPosition(*window);
-				new_x = (mouse_pos_2.x - offset) / size;
-				new_y = (mouse_pos_2.y - offset) / size;
+				new_x = static_cast<int>(mouse_pos_2.x - offset) / size;
+				new_y = static_cast<int>(mouse_pos_2.y - offset) / size;
 				second_cord = true;
 			}
 			if (first_cord && second_cord) {
@@ -90,6 +105,7 @@ void Game::update() {
 						board.promote(new_x, new_y, piece_type);
 					}
 					turn = !turn;
+					game_status = board.game_status();
 				}
 				first_cord = second_cord = false;
 			}
@@ -100,13 +116,13 @@ void Game::update() {
 			text.setString("Black turn");
 	}
 
-	if (board.game_status() != ongoing) {
-		if (board.game_status() == white) {
+	if (game_status != ongoing) {
+		if (game_status == white) {
 			text.setString("White won");
-		}else if(board.game_status() == black) {
+		}else if(game_status == black) {
 			text.setString("Black won");
 		}
-		else if (board.game_status() == stalemate)
+		else if (game_status == stalemate)
 			text.setString("Draw");
 		ending = true;
 	}
@@ -273,7 +289,6 @@ int Game::display_promotion(int new_y) {
 				}
 			}
 		}
-
 		window->display();
 	}
 }

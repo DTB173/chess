@@ -1,10 +1,13 @@
 #pragma once
-#include "Board.h"
+#include "Player.h"
+//#include "Board.h"
 #include "Button.h"
+#include <vector>
 #include <SFML/Graphics.hpp>
 class Game
 {
 	Board board;
+	Player player;
 	Button button;
 	sf::RenderWindow* window;
 	sf::Event ev;
@@ -21,6 +24,8 @@ class Game
 	bool first_cord = false;
 	bool second_cord = false;
 	int current_x, current_y, new_x, new_y;
+	int game_status=0;
+	std::vector<int>picked_move;
 	uint64_t possible_moves;
 	sf::Font font;
 	sf::Text text;
@@ -32,7 +37,6 @@ public:
 	void update();
 	void render();
 
-	int game_status()const;
 	bool which_turn()const { return turn; };
 	bool is_ingame()const { return ingame; };
 	void display_highlighted(uint64_t possible_moves);

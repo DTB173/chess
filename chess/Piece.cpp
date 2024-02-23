@@ -1,22 +1,13 @@
 #include "Piece.h"
 #include <iostream>
-void Piece::set_team(int t) {
+void Piece::set_team(uint8_t t) {
 	team = t;
 }
-void Piece::set_type(int t) {
+void Piece::set_type(uint8_t t) {
 	type = t;
 }
 
-Piece::Piece(int team_v, int type_v):team(no_team),type(empty) {
-	/*
-		type:
-		 1 - pawn
-		 2 - rook
-		 3 - knight
-		 4 - bishop
-		 5 - queen  
-	     6 - king	
-	*/
+Piece::Piece(uint8_t team_v, uint8_t type_v):team(no_team),type(empty) {
 	team = team_v;
 	type = type_v;
 	switch (type) {
@@ -43,7 +34,7 @@ Piece Piece::piece_copy(Piece piece_v) {
 void Piece::moved() {
 	this->first_move = false;
 }
-bool Piece::is_legal(int current_x, int current_y, int new_x, int new_y, int type_v)const {
+bool Piece::is_legal(uint8_t current_x, uint8_t current_y, uint8_t new_x, uint8_t new_y, uint8_t type_v)const {
 	switch (type_v) {
 	case pawn:
 		if (first_move) {
@@ -91,4 +82,14 @@ bool Piece::is_legal(int current_x, int current_y, int new_x, int new_y, int typ
 	}
 	return true;
 }
-
+int Piece::get_value() {
+	switch (this->get_type()) {
+	case pawn:return 1; break;
+	case rook:return 5; break;
+	case knight:return 3; break;
+	case bishop:return 3; break;
+	case queen:return 9; break;
+	case king:return 1000; break;
+	default:return 0; break;
+	}
+}

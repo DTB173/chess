@@ -66,7 +66,7 @@ void Board::render(sf::RenderWindow* window) {
 		}
 	}
 }
-int Board::validate_move(int current_x, int current_y, int new_x, int new_y, bool turn) {
+uint8_t Board::validate_move(uint8_t current_x, uint8_t current_y, uint8_t new_x, uint8_t new_y, bool turn) {
 	if ((turn && (piece[current_x][current_y].get_team() == white)) || (!turn && (piece[current_x][current_y].get_team() == black)))
 		if (check_move(current_x, current_y, new_x, new_y, piece) && simulate_move(current_x, current_y, new_x, new_y, piece[current_x][current_y].get_team())) {
 			if (piece[current_x][current_y].get_type() == pawn && (new_y == 0 || new_y == 7)) {
@@ -77,7 +77,7 @@ int Board::validate_move(int current_x, int current_y, int new_x, int new_y, boo
 	return 0;
 }
 
-void Board::piece_move(int current_x, int current_y, int new_x, int new_y) {
+void Board::piece_move(uint8_t current_x, uint8_t current_y, uint8_t new_x, uint8_t new_y) {
 	if (piece[current_x][current_y].is_first_move()) {
 		if (is_castle(current_x, current_y, new_x, new_y, piece)) {
 			castle(current_x, current_y, new_x, new_y);
@@ -104,7 +104,7 @@ void Board::piece_move(int current_x, int current_y, int new_x, int new_y) {
 	std::cout << "\nwhite king: " << is_checked(white_king.get_x(), white_king.get_y(), white_king.get_team(), piece) << " black king: " << is_checked(black_king.get_x(), black_king.get_y(), black_king.get_team(), piece) << "\n"; ;
 	//tab_display(piece);
 }
-bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
+bool Board::check_move(uint8_t current_x, uint8_t current_y, uint8_t new_x, uint8_t new_y, Piece(*piece)[8])const {
 	Piece piece_checked = piece[current_x][current_y];
 	switch (piece_checked.get_type()) {
 	case pawn:
@@ -117,15 +117,15 @@ bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece
 					return true;
 				}
 			}
-			else if (piece[new_x][current_y].get_team() !=piece[current_x][current_y].get_team()) {//checking for enpassant
+			else if (piece[new_x][current_y].get_team() !=piece[current_x][current_y].get_team()&&abs(current_x-new_x)==1) {//checking for enpassant
 				if (piece[new_x][current_y].get_enpass() > 0) {
 					if (piece_checked.get_team() == white && current_y == new_y+1)
 						return true;
 					if (piece_checked.get_team() == black && current_y == new_y-1)
 						return true;
 				}
-				return false;
 			}
+			return false;
 		}
 		else if (is_pawn_capture(current_x, current_y, new_x, new_y,piece)) {//checking if capture can be performed
 			return true;
@@ -160,7 +160,7 @@ bool Board::check_move(int current_x, int current_y, int new_x, int new_y, Piece
 	return false;
 }
 
-bool Board::simulate_move(int current_x, int current_y, int new_x, int new_y, int team) {
+bool Board::simulate_move(uint8_t current_x, uint8_t current_y, uint8_t new_x, uint8_t new_y, uint8_t team) {
 	Piece simpiece[8][8];
 	King tempwhiteKing(white_king);
 	King tempblackKing(black_king);
@@ -194,14 +194,9 @@ bool Board::simulate_move(int current_x, int current_y, int new_x, int new_y, in
 	return false;
 }
 
-void Board::castle(int king_x, int king_y, int new_x, int new_y) {
+void Board::castle(uint8_t king_x, uint8_t king_y, uint8_t new_x, uint8_t new_y) {
 	int rook_x, rook_y;
-	if (king_x > new_x) {
-		rook_x = 0;
-	}
-	else {
-		rook_x = 7;
-	}
+	rook_x = king_x > new_x ? 0 : 7;
 	rook_y = king_y;	
 
 	Piece temp;
@@ -222,7 +217,7 @@ void Board::castle(int king_x, int king_y, int new_x, int new_y) {
 	piece[king_x][king_y] = Piece();
 	piece[king_x + dxk][king_y].piece_copy(temp);
 }
-void Board::promote(int x, int y,int type) {
+void Board::promote(uint8_t x, uint8_t y, uint8_t type) {
 	int team = piece[x][y].get_team();
 	piece[x][y] = Piece();
 	switch (type) {
@@ -233,7 +228,7 @@ void Board::promote(int x, int y,int type) {
 	}
 }
 
-bool Board::is_pawn_capture(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
+bool Board::is_pawn_capture(uint8_t current_x, uint8_t current_y, uint8_t new_x, uint8_t new_y, Piece(*piece)[8])const {
 	if (abs(current_x - new_x) == 1) {
 		if (piece[current_x][current_y].get_team() == white && current_y - new_y == 1) {
 			if (piece[new_x][new_y].get_team() == black) {
@@ -248,7 +243,7 @@ bool Board::is_pawn_capture(int current_x, int current_y, int new_x, int new_y, 
 	}
 	return false;
 }
-bool Board::is_rook_move_valid(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8]) const {
+bool Board::is_rook_move_valid(uint8_t current_x, uint8_t current_y, uint8_t new_x, uint8_t new_y, Piece(*piece)[8]) const {
 	if (!piece[current_x][current_y].is_legal(current_x, current_y, new_x, new_y, rook)) {
 		return false;
 	}
@@ -278,7 +273,7 @@ bool Board::is_rook_move_valid(int current_x, int current_y, int new_x, int new_
 	}
 	return true; // Movement is valid
 }
-bool Board::is_bishop_move_valid(int current_x, int current_y, int new_x, int new_y, Piece(*piece)[8])const {
+bool Board::is_bishop_move_valid(uint8_t current_x, uint8_t current_y, uint8_t new_x, uint8_t new_y, Piece(*piece)[8])const {
 	if (piece[current_x][current_y].is_legal(current_x, current_y, new_x, new_y, bishop)) {
 		int dx = new_x > current_x ? 1 : -1;
 		int dy = new_y > current_y ? 1 : -1;
@@ -301,7 +296,7 @@ bool Board::is_bishop_move_valid(int current_x, int current_y, int new_x, int ne
 	}
 	return false; // Move is not legal for bishop
 }
-bool Board::is_checked(int current_x, int current_y, int team_v, Piece(*piece)[8])const {
+bool Board::is_checked(uint8_t current_x, uint8_t current_y, uint8_t team_v, Piece(*piece)[8])const {
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
 			if (piece[i][j].get_team()==no_team)
@@ -313,7 +308,7 @@ bool Board::is_checked(int current_x, int current_y, int team_v, Piece(*piece)[8
 	}
 	return false; // King is not in check
 }
-bool Board::is_castle(int king_x, int king_y, int new_x, int new_y,Piece(*piece)[8])const {
+bool Board::is_castle(uint8_t king_x, uint8_t king_y, uint8_t new_x, uint8_t new_y,Piece(*piece)[8])const {
 	if (new_x != 2 && new_x != 6) {
 		return false; // Incorrect target column for castling
 	}
@@ -367,7 +362,7 @@ bool Board::is_castle(int king_x, int king_y, int new_x, int new_y,Piece(*piece)
 	}
 	return false;
 }
-bool Board::have_possible_moves(int team) {
+bool Board::have_possible_moves(uint8_t team) {
 	for (int current_x = 0; current_x < 8; current_x++) {
 		for (int current_y = 0; current_y < 8; current_y++) {
 			if (piece[current_x][current_y].get_team() != team)
@@ -392,7 +387,7 @@ void Board::dec_enpass() {
 	}
 }
 
-int Board::game_status() {
+uint8_t Board::game_status() {
 	bool white_can_move = have_possible_moves(white);
 	bool white_checked = is_checked(white_king.get_x(), white_king.get_y(), white, piece);
 	bool black_can_move = have_possible_moves(black);
@@ -409,8 +404,16 @@ int Board::game_status() {
 		return stalemate;
 	}
 }
-
-void Board::highlight_moves(int current_x, int current_y, uint64_t& possible_moves) {
+Board Board::board_copy()const {
+	Piece copied_board[8][8];
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; i < 8; j++) {
+			copied_board[i][j].piece_copy(this->piece[i][j]);
+		}
+	}
+	return copied_board;
+}
+void Board::highlight_moves(uint8_t current_x, uint8_t current_y, uint64_t& possible_moves) {
 	for (int new_x = 0; new_x < 8; new_x++) {
 		for (int new_y = 0; new_y < 8; new_y++) {
 			if (check_move(current_x, current_y, new_x, new_y, piece) && simulate_move(current_x, current_y, new_x, new_y, piece[current_x][current_y].get_team())) {
