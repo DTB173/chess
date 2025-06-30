@@ -38,6 +38,7 @@ Game::~Game() {
 }
 void Game::update() {
 	while (window->pollEvent(ev)) {
+		/*
 		if (!turn) {
 			picked_move = player.pick_move(board, turn,game_status);
 			if (game_status == 0) {
@@ -46,6 +47,7 @@ void Game::update() {
 				turn = !turn;
 			}
 		}
+		*/
 		if (ending) {
 			if (ev.type == sf::Event::KeyPressed || sf::Event::Closed)
 				ingame = false;
