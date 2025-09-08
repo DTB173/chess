@@ -107,7 +107,7 @@ void Board::piece_move(const Move& move) {
 	piece[from.x][from.y] = Piece();
 	if (piece[from.x][from.y].get_type() == pawn && abs(from.x - to.x) == 1 && piece[to.x][to.y].get_team() == no_team) {
 		piece[to.x][from.y] = Piece();
-}
+	}
 }
 bool Board::check_move(const Move& move, Piece(*piece)[8])const {
 	auto [from, to] = move;
@@ -226,7 +226,7 @@ void Board::castle(const Position& kingPos, const Position& newPos) {
 void Board::promote(const Position& pos, TypeAndColor::Type type) {
 	TypeAndColor::Color team = piece[pos.x][pos.y].get_team();
 	piece[pos.x][pos.y] = Piece(team, type);
-	}
+}
 
 bool Board::is_pawn_capture(const Move& move, Piece(*piece)[8])const {
 	auto [from, to] = move;
@@ -352,9 +352,9 @@ bool Board::is_castle(const Position& kingPos, const Position& newPos, Piece(*pi
 				}
 				if (is_checked({ kingPos.x + 1, kingPos.y }, piece[kingPos.x][rookPos.y].get_team(), piece) ||
 					is_checked({ kingPos.x + 2, kingPos.y }, piece[kingPos.x][rookPos.y].get_team(), piece)) {
-						return false;
-					}
+					return false;
 				}
+			}
 			else if (kingPos.x > rookPos.x) {
 				for (int xAxis = rookPos.x + 1; xAxis < kingPos.x; ++xAxis) {
 					if (piece[xAxis][rookPos.y].get_type() != empty) {

@@ -53,10 +53,10 @@ void Game::update() {
 						Type selectedPromotion = TypeAndColor::empty;
 					}
 					else {
-				turn = !turn;
+						turn = !turn;
 						game_status = board.game_status();
-			}
-		}
+					}
+				}
 			}
 			continue;
 		}
@@ -239,7 +239,7 @@ TypeAndColor::Type Game::display_promotion(int new_y) {
 			else if (mouse_pos.x > 295 && mouse_pos.x < 431) k = 1;
 			else if (mouse_pos.x > 436 && mouse_pos.x < 572) k = 2;
 			else if (mouse_pos.x > 577 && mouse_pos.x < 713) k = 3;
-			}
+		}
 		window->clear();
 		window->draw(bgsprite);
 		window->draw(text);
@@ -252,7 +252,7 @@ TypeAndColor::Type Game::display_promotion(int new_y) {
 			}
 			else {
 				window->draw(tile);
-		}
+			}
 		}
 		for (int i = 0; i < 4; i++) {
 			sprite.setTexture(board.textures[team - 1][i + 1]); // Use board's textures (rook, knight, bishop, queen)
@@ -278,8 +278,8 @@ TypeAndColor::Type Game::display_promotion(int new_y) {
 					else if (mouse_pos.x > 295 && mouse_pos.x < 431) return TypeAndColor::knight;
 					else if (mouse_pos.x > 436 && mouse_pos.x < 572) return TypeAndColor::bishop;
 					else if (mouse_pos.x > 577 && mouse_pos.x < 713) return TypeAndColor::queen;
-					}
-					}
+				}
+			}
 			break;
 		}
 		window->display();

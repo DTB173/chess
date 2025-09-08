@@ -12,12 +12,12 @@ namespace TypeAndColor {
 		bishop,
 		queen,
 		king,
-};
+	};
 	enum Color {
-	no_team = 0,
-	white = 1,
+		no_team = 0,
+		white = 1,
 		black = 2,
-};
+	};
 }
 
 struct Position {

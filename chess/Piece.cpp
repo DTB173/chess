@@ -11,7 +11,7 @@ void Piece::set_type(Type t) {
 Piece::Piece(Color team_v, Type type_v)
 	:m_type{ type_v }
 	, m_team{ team_v } {
-	}
+}
 
 Piece::Piece(const Piece& piece_v) {
 	m_team = piece_v.m_team;
