@@ -230,6 +230,7 @@ TypeAndColor::Type Game::display_promotion(int new_y) {
 	sf::Sprite sprite;
 	int k = -1;
 	bool selecting = true;
+
 	while (selecting) {
 		window->pollEvent(ev);
 		sf::Vector2i mouse_pos = sf::Mouse::getPosition(*window);

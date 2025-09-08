@@ -13,11 +13,12 @@ namespace TypeAndColor {
 		queen,
 		king,
 };
-enum team_color {
+	enum Color {
 	no_team = 0,
 	white = 1,
 		black = 2,
 };
+}
 
 struct Position {
 	int x;
