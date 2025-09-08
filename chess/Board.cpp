@@ -137,7 +137,6 @@ bool Board::check_move(const Move& move, Piece(*piece)[8])const {
 			return true;
 		}
 		return false;
-		break;
 	case rook:
 		return is_rook_move_valid(move, piece);
 	case knight:
@@ -157,7 +156,6 @@ bool Board::check_move(const Move& move, Piece(*piece)[8])const {
 			return true;
 		}
 		return false;
-		break;
 	}
 	return false;
 }
@@ -215,7 +213,6 @@ void Board::castle(const Position& kingPos, const Position& newPos) {
 	else {
 		black_king.set_position({kingPos.x + dxk, kingPos.y	});
 	}
-	temp.piece_copy(piece[king_x][king_y]);
 
 	Piece temp;
 	temp = (piece[kingPos.x][kingPos.y]);
@@ -230,7 +227,6 @@ void Board::promote(const Position& pos, TypeAndColor::Type type) {
 	TypeAndColor::Color team = piece[pos.x][pos.y].get_team();
 	piece[pos.x][pos.y] = Piece(team, type);
 	}
-}
 
 bool Board::is_pawn_capture(const Move& move, Piece(*piece)[8])const {
 	auto [from, to] = move;

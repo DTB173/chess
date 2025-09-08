@@ -1,9 +1,9 @@
 #pragma once
 #include "Player.h"
-//#include "Board.h"
 #include "Button.h"
 #include <vector>
 #include <SFML/Graphics.hpp>
+
 class Game
 {
 	Board board;
@@ -23,8 +23,8 @@ class Game
 	sf::RectangleShape possible_move;
 	bool first_cord = false;
 	bool second_cord = false;
-	int current_x, current_y, new_x, new_y;
-	int game_status=0;
+	Move move;
+	Chess::gameState game_status{ Chess::gameState::ongoing };
 	std::vector<int>picked_move;
 	uint64_t possible_moves;
 	sf::Font font;
@@ -40,6 +40,6 @@ public:
 	bool which_turn()const { return turn; };
 	bool is_ingame()const { return ingame; };
 	void display_highlighted(uint64_t possible_moves);
-	int display_promotion(int new_y);
+	Type display_promotion(int new_y);
 };
 

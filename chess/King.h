@@ -1,19 +1,28 @@
 #pragma once
-class King
-{
+#include "Piece.h"
+using TypeAndColor::Color;
+
+struct King{
 private:
-	int current_x;
-	int current_y;
-	int team;
-	bool is_alive = true;
+	Position m_pos{};
+	Color m_team{};
+	bool m_is_alive = true;
 public:
-	King(int current_x, int current_y, int team);
-	King copy_king(King king_v);
-	bool get_status() const { return this->is_alive; };
-	int get_x()const { return this->current_x; };
-	int get_y()const { return this->current_y; };
-	int get_team()const { return this->team; };
-	void set_status(bool status) { this->is_alive = status; };
-	void set_position(int new_x, int new_y);
+	King() = default;
+	King(const Position& pos, Color team) {
+		m_pos = pos;
+		m_team = team;
+	}
+	King(const King& other) {
+		m_pos = other.m_pos;
+		m_team = other.m_team;
+	}
+	Position get_position()const { return m_pos; };
+	void set_position(const Position& pos){ m_pos = pos; }
+
+	Color get_team()const { return m_team; };
+
+	bool get_status() const { m_is_alive; };
+	void set_status(bool status) { m_is_alive = status; };
 };
 

@@ -1,20 +1,20 @@
 #include "Game.h"
 #include <iostream>
 Game::Game():board(true) {
+	using Chess::offset;
+	using Chess::tileSize;
+
 	ingame = true;
 	ending = false;
-	current_x = -1;
-	current_y = -1;
-	new_x = -1;
-	new_y = -1;
-	picked_move = {0,0,0,0};
+	move = { -1,-1,-1,-1 };
+	//picked_move = {0,0,0,0};
 	possible_moves = 0;
-	window = new sf::RenderWindow(sf::VideoMode(size * 8 + offset * 2, size * 8 + offset * 2), "Chess", sf::Style::Titlebar | sf::Style::Close);
+	window = new sf::RenderWindow(sf::VideoMode(tileSize * 8 + offset * 2, tileSize * 8 + offset * 2), "Chess", sf::Style::Titlebar | sf::Style::Close);
 	window->setFramerateLimit(30);
-	square_white = sf::RectangleShape(sf::Vector2f(size, size));
-	square_black = sf::RectangleShape(sf::Vector2f(size, size));
-	square_selected = sf::RectangleShape(sf::Vector2f(size, size));
-	possible_move = sf::RectangleShape(sf::Vector2f(size,size));
+	square_white = sf::RectangleShape(sf::Vector2f(tileSize, tileSize));
+	square_black = sf::RectangleShape(sf::Vector2f(tileSize, tileSize));
+	square_selected = sf::RectangleShape(sf::Vector2f(tileSize, tileSize));
+	possible_move = sf::RectangleShape(sf::Vector2f(tileSize, tileSize));
 	square_white.setFillColor(sf::Color(238,238,210));
 	square_black.setFillColor(sf::Color(118,150,86));
 	square_selected.setFillColor(sf::Color(186,202,68));
@@ -30,24 +30,36 @@ Game::Game():board(true) {
 	cords.setCharacterSize(20);
 	text.setString("White turn");
 	text.setPosition(window->getSize().x / 2 - 55, 10);
-	//board.tab_display();
 }
 Game::~Game() {
 	delete window;
 	window = nullptr;
 }
 void Game::update() {
+	using namespace Chess;
+
 	while (window->pollEvent(ev)) {
-		/*
-		if (!turn) {
-			picked_move = player.pick_move(board, turn,game_status);
-			if (game_status == 0) {
-				board.piece_move(picked_move[0], picked_move[1], picked_move[2], picked_move[3]);
-				game_status = board.game_status();
+		if (!turn && !ending) { // Black's turn (AI)
+			std::vector<int> ai_move = player.pick_move(board, false, game_status);
+			if (!ai_move.empty()) {
+				Move m{ {ai_move[0], ai_move[1]}, {ai_move[2], ai_move[3]} };
+				int move_type = board.validate_move(m, false);
+				if (move_type > 0) {
+					board.piece_move(m);
+					if (move_type == 2) {
+						bool isPromoting = true;
+						Color promotionTeam = black;
+						Position promotionPos = m.to;
+						Type selectedPromotion = TypeAndColor::empty;
+					}
+					else {
 				turn = !turn;
+						game_status = board.game_status();
 			}
 		}
-		*/
+			}
+			continue;
+		}
 		if (ending) {
 			if (ev.type == sf::Event::KeyPressed || sf::Event::Closed)
 				ingame = false;
@@ -65,7 +77,6 @@ void Game::update() {
 					window->clear();
 					board.render(window);
 					window->display();
-					std::cout << "";
 				}
 			}
 		}
@@ -84,27 +95,27 @@ void Game::update() {
 			if (ev.mouseButton.button == sf::Mouse::Left && !first_cord && !second_cord) {
 				possible_moves = 0;
 				mouse_pos_1 = sf::Mouse::getPosition(*window);
-				current_x = static_cast<int>(mouse_pos_1.x - offset) / size;
-				current_y = static_cast<int>(mouse_pos_1.y - offset) / size;
-				if (current_x < 0 || current_x>7 || current_y < 0 || current_y>7)
+				move.from.x = static_cast<int>(mouse_pos_1.x - offset) / tileSize;
+				move.from.y = static_cast<int>(mouse_pos_1.y - offset) / tileSize;
+				if (move.from.x < 0 || move.from.x>7 || move.from.y < 0 || move.from.y>7)
 					continue;
 				first_cord = true;
-				square_selected.setPosition(current_x * size + offset, current_y * size + offset);
-				board.highlight_moves(current_x, current_y, possible_moves);
+				square_selected.setPosition(move.from.x * tileSize + offset, move.from.y * tileSize + offset);
+				board.highlight_moves(move.from, possible_moves);
 			}
 			else if (ev.mouseButton.button == sf::Mouse::Left && first_cord && !second_cord) {
 				mouse_pos_2 = sf::Mouse::getPosition(*window);
-				new_x = static_cast<int>(mouse_pos_2.x - offset) / size;
-				new_y = static_cast<int>(mouse_pos_2.y - offset) / size;
+				move.to.x = static_cast<int>(mouse_pos_2.x - offset) / tileSize;
+				move.to.y = static_cast<int>(mouse_pos_2.y - offset) / tileSize;
 				second_cord = true;
 			}
 			if (first_cord && second_cord) {
-				int move_type = board.validate_move(current_x, current_y, new_x, new_y, turn);
+				int move_type = board.validate_move(move, turn);
 				if (move_type > 0) {
-					board.piece_move(current_x, current_y, new_x, new_y);
+					board.piece_move(move);
 					if (move_type == 2) {
-						int piece_type = display_promotion(new_y);
-						board.promote(new_x, new_y, piece_type);
+						auto piece_type = display_promotion(move.to.y);
+						board.promote(move.to, piece_type);
 					}
 					turn = !turn;
 					game_status = board.game_status();
@@ -119,9 +130,9 @@ void Game::update() {
 	}
 
 	if (game_status != ongoing) {
-		if (game_status == white) {
+		if (game_status == whiteWon) {
 			text.setString("White won");
-		}else if(game_status == black) {
+		}else if(game_status == blackWon) {
 			text.setString("Black won");
 		}
 		else if (game_status == stalemate)
@@ -130,9 +141,11 @@ void Game::update() {
 	}
 }
 void Game::render() {
+	using Chess::offset;
+	using Chess::tileSize;
 	window->clear(sf::Color(128, 128, 128));
-	const char* ycords[8] = { "8", "7", "6", "5", "4", "3", "2", "1" };
-	const char* xcords[8] = { "A", "B", "C", "D", "E", "F", "G", "H" };
+	static const char* ycords[8] = { "8", "7", "6", "5", "4", "3", "2", "1" };
+	static const char* xcords[8] = { "A", "B", "C", "D", "E", "F", "G", "H" };
 	if (ending) {
 		text.setCharacterSize(50);
 		if (text.getString() == "Draw") {
@@ -148,17 +161,17 @@ void Game::render() {
 			// Draw coordinates
 			if (i % 8 == 0) {
 				cords.setString(ycords[i / 8]);
-				cords.setPosition(20, i / 8 * size + offset + 40);
+				cords.setPosition(20, i / 8 * tileSize + offset + 40);
 				window->draw(cords);
 			}
 			// Draw squares
 			if ((i / 8) % 2) {
-				square_white.setPosition((i % 8) * size + size + offset, (i / 8) * size + offset);
-				square_black.setPosition((i % 8) * size + offset, (i / 8) * size + offset);
+				square_white.setPosition((i % 8) * tileSize + tileSize + offset, (i / 8) * tileSize + offset);
+				square_black.setPosition((i % 8) * tileSize + offset, (i / 8) * tileSize + offset);
 			}
 			else {
-				square_white.setPosition((i % 8) * size + offset, (i / 8) * size + offset);
-				square_black.setPosition((i % 8) * size + size + offset, (i / 8) * size + offset);
+				square_white.setPosition((i % 8) * tileSize + offset, (i / 8) * tileSize + offset);
+				square_black.setPosition((i % 8) * tileSize + tileSize + offset, (i / 8) * tileSize + offset);
 			}
 			window->draw(square_white);
 			window->draw(square_black);
@@ -171,7 +184,7 @@ void Game::render() {
 
 		for (int i = 0; i < 8; ++i) {
 			cords.setString(xcords[i]);
-			cords.setPosition(i * size + offset + 40, (size * 8 + offset * 2) - size + 50);
+			cords.setPosition(i * tileSize + offset + 40, (tileSize * 8 + offset * 2) - tileSize + 50);
 			window->draw(cords);
 		}
 	}
@@ -180,21 +193,27 @@ void Game::render() {
 }
 
 void Game::display_highlighted(uint64_t possible_moves) {
+	using Chess::offset;
+	using Chess::tileSize;
+
 	for (int y = 0; y < 8; ++y) {
 		for (int x = 0; x < 8; ++x) {
 			int bit_index = y * 8 + x;
 			uint64_t mask = (uint64_t)1 << bit_index;
 			if (possible_moves & mask) {
-				possible_move.setPosition(x * size + offset, y * size + offset);
+				possible_move.setPosition(x * tileSize + offset, y * tileSize + offset);
 				window->draw(possible_move);
 			}
 		}
 	}
 }
 
-int Game::display_promotion(int new_y) {
+TypeAndColor::Type Game::display_promotion(int new_y) {
+	using Chess::offset;
+	using Chess::tileSize;
+
 	int team = new_y == 0 ? white : black;
-	sf::RectangleShape tile = sf::RectangleShape(sf::Vector2f(size + offset, size + offset));
+	sf::RectangleShape tile(sf::Vector2f(tileSize + offset, tileSize + offset));
 	tile.setFillColor(sf::Color(238, 238, 210));
 	tile.setOutlineColor(sf::Color::Black);
 	tile.setOutlineThickness(-5);
@@ -207,54 +226,36 @@ int Game::display_promotion(int new_y) {
 	sf::Texture background;
 	background.create(window->getSize().x, window->getSize().y);
 	background.update(*window);
-	sf::Texture texture;
-	sf::Sprite sprite;
 	sf::Sprite bgsprite(background);
-	sf::Texture textures[2][4];
-	std::string teams[2] = { "white","black" };
-	std::string types[4] = { "rook","knight","bishop","queen" };
-	for (int i = 0; i < 2; ++i) {
-		for (int j = 0; j < 4; j++) {
-			textures[i][j].loadFromFile("pieces/" + types[j] + "_" + teams[i] + ".png");
-		}
-	}
+	sf::Sprite sprite;
 	int k = -1;
 	bool selecting = true;
 	while (selecting) {
 		window->pollEvent(ev);
 		sf::Vector2i mouse_pos = sf::Mouse::getPosition(*window);
 		if (mouse_pos.y > 368 && mouse_pos.y < 504) {
-			if (mouse_pos.x > 155 && mouse_pos.x < 290) {
-				k = 0;
+			if (mouse_pos.x > 155 && mouse_pos.x < 290) k = 0;
+			else if (mouse_pos.x > 295 && mouse_pos.x < 431) k = 1;
+			else if (mouse_pos.x > 436 && mouse_pos.x < 572) k = 2;
+			else if (mouse_pos.x > 577 && mouse_pos.x < 713) k = 3;
 			}
-			else if (mouse_pos.x > 295 && mouse_pos.x < 431) {
-				k = 1;
-			}
-			else if (mouse_pos.x > 436 && mouse_pos.x < 572) {
-				k = 2;
-			}
-			else if (mouse_pos.x > 577 && mouse_pos.x < 713) {
-				k = 3;
-			}
-		}
 		window->clear();
 		window->draw(bgsprite);
 		window->draw(text);
 		for (int i = 0; i < 4; i++) {
-			tile.setPosition(window->getSize().x * 0.173 + (size + offset - 5) * i, window->getSize().y * 0.39 + 25);
+			tile.setPosition(window->getSize().x * 0.173 + (tileSize + offset - 5) * i, window->getSize().y * 0.39 + 25);
 			if (i == k) {
 				tile.setFillColor(sf::Color(118, 150, 86));
 				window->draw(tile);
 				tile.setFillColor(sf::Color(238, 238, 210));
 			}
-			else
+			else {
 				window->draw(tile);
 		}
-
+		}
 		for (int i = 0; i < 4; i++) {
-			texture = textures[team - 1][i];
-			sprite.setTexture(texture);
-			sprite.setPosition(window->getSize().x * 0.22 + (size + offset - 5) * i, window->getSize().y * 0.44 + 17);
+			sprite.setTexture(board.textures[team - 1][i + 1]); // Use board's textures (rook, knight, bishop, queen)
+			sprite.setPosition(window->getSize().x * 0.22 + (tileSize + offset - 5) * i, window->getSize().y * 0.44 + 17);
 			window->draw(sprite);
 		}
 		switch (ev.type) {
@@ -272,25 +273,15 @@ int Game::display_promotion(int new_y) {
 			if (ev.mouseButton.button == sf::Mouse::Left) {
 				sf::Vector2i mouse_pos = sf::Mouse::getPosition(*window);
 				if (mouse_pos.y > 368 && mouse_pos.y < 504) {
-					if (mouse_pos.x > 155 && mouse_pos.x < 290) {
-						selecting = false;
-						return rook;
+					if (mouse_pos.x > 155 && mouse_pos.x < 290) return TypeAndColor::rook;
+					else if (mouse_pos.x > 295 && mouse_pos.x < 431) return TypeAndColor::knight;
+					else if (mouse_pos.x > 436 && mouse_pos.x < 572) return TypeAndColor::bishop;
+					else if (mouse_pos.x > 577 && mouse_pos.x < 713) return TypeAndColor::queen;
 					}
-					else if (mouse_pos.x > 295 && mouse_pos.x < 431) {
-						selecting = false;
-						return knight;
 					}
-					else if (mouse_pos.x > 436 && mouse_pos.x < 572) {
-						selecting = false;
-						return bishop;
-					}
-					else if (mouse_pos.x > 577 && mouse_pos.x < 713) {
-						selecting = false;
-						return queen;
-					}
-				}
-			}
+			break;
 		}
 		window->display();
 	}
+	return TypeAndColor::queen; // Fallback (should not reach here)
 }
